@@ -1,7 +1,7 @@
 package app
 
 type DocumentHeader struct {
-	ID        string
-	ObjectKey string
-	Size      int64
+	ID   string
+	Name string
+	Size int64
 }
