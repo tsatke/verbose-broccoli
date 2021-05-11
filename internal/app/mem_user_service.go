@@ -12,11 +12,11 @@ func NewMemUserService() *MemUserService {
 	}
 }
 
-func (m *MemUserService) CredentialsValid(username string, password string) (bool, error) {
+func (m *MemUserService) CredentialsValid(username, password string) (bool, error) {
 	return m.passwords[username] == password, nil
 }
 
-func (m *MemUserService) CreateUser(username string, password string) error {
+func (m *MemUserService) CreateUser(username, password string) error {
 	m.userIDs[username] = username
 	m.passwords[username] = password
 	return nil

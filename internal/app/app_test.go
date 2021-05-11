@@ -90,6 +90,7 @@ func (suite *AppSuite) performTestRequest(r TestRequest, wantStatus int, wantRes
 	response, err := client.Do(req)
 	suite.NoError(err)
 	gotResp, err := io.ReadAll(response.Body)
+	suite.NoError(err)
 	defer func() {
 		_ = response.Body.Close()
 	}()
