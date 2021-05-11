@@ -1,14 +1,31 @@
 package main
 
 import (
+	"net"
+
+	"github.com/gin-gonic/gin"
 	"github.com/tsatke/verbose-broccoli/internal/app"
-	"github.com/tsatke/verbose-broccoli/internal/app/mem"
 )
 
 func main() {
-	u := mem.NewUserService()
+	gin.SetMode(gin.ReleaseMode)
+
+	u := app.NewMemUserService()
 	_ = u.CreateUser("foo", "bar")
 
-	a := app.New(nil, u, nil, nil, nil)
-	_ = a.Run(":8080")
+	lis, err := net.Listen("tcp", ":8080")
+	if err != nil {
+		panic(err)
+	}
+
+	a := app.New(
+		lis,
+		app.NewMemUserService(),
+		app.NewMemObjectStorage(),
+		app.NewMemDocumentIndex(),
+		app.NewMemPermissionService(),
+	)
+	if err := a.Run(); err != nil {
+		panic(err)
+	}
 }

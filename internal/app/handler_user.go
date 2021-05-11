@@ -14,6 +14,15 @@ func (a *App) HandlerUserLogin() gin.HandlerFunc {
 	}
 
 	return func(c *gin.Context) {
+		sess := sessions.Default(c)
+		if sess.Get(UserIDKey) != nil {
+			c.AbortWithStatusJSON(http.StatusOK, Response{
+				Success: true,
+				Message: "already logged in",
+			})
+			return
+		}
+
 		var r request
 		if err := c.BindJSON(&r); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, Response{
@@ -40,8 +49,31 @@ func (a *App) HandlerUserLogin() gin.HandlerFunc {
 			return
 		}
 
-		sess := sessions.Default(c)
 		sess.Set(UserIDKey, userID)
+
+		if err := sess.Save(); err != nil {
+			_ = c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, Response{
+			Success: true,
+		})
+	}
+}
+
+func (a *App) HandlerUserLogout() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		sess := sessions.Default(c)
+		if sess.Get(UserIDKey) == nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, Response{
+				Success: false,
+				Message: "not logged in",
+			})
+			return
+		}
+
+		sess.Clear()
 
 		if err := sess.Save(); err != nil {
 			_ = c.AbortWithError(http.StatusInternalServerError, err)

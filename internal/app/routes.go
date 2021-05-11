@@ -37,6 +37,7 @@ func (a *App) setupRoutes() {
 		user := rest.Group("/user")
 		{
 			user.POST("/login", a.HandlerUserLogin())
+			user.GET("/logout", a.HandlerUserLogout())
 		}
 	}
 }
