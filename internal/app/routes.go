@@ -22,6 +22,7 @@ func (a *App) setupRoutes() {
 
 	rest := a.router.Group("/rest")
 	{
+		rest.GET("/healthcheck", a.HandlerHealthcheck())
 		doc := rest.Group("/doc")
 		{
 			doc.GET("/:id/content", a.HandlerGetContent())
