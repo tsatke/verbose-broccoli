@@ -30,12 +30,12 @@ func (s *MemObjectStorage) Create(id string, rd io.Reader) error {
 	return nil
 }
 
-func (s *MemObjectStorage) Read(id string) (io.Reader, error) {
+func (s *MemObjectStorage) Read(id string) (io.ReadCloser, error) {
 	data, ok := s.data[id]
 	if !ok {
 		return nil, fmt.Errorf("does not exist")
 	}
-	return bytes.NewReader(data), nil
+	return readCloserWrapper{bytes.NewReader(data)}, nil
 }
 
 func (s *MemObjectStorage) Update(id string, rd io.Reader) error {
@@ -54,5 +54,17 @@ func (s *MemObjectStorage) Update(id string, rd io.Reader) error {
 
 func (s *MemObjectStorage) Delete(id string) error {
 	delete(s.data, id)
+	return nil
+}
+
+type readCloserWrapper struct {
+	rd io.Reader
+}
+
+func (r readCloserWrapper) Read(p []byte) (n int, err error) {
+	return r.rd.Read(p)
+}
+
+func (r readCloserWrapper) Close() error {
 	return nil
 }
