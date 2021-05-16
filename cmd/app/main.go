@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"net"
 
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/gin-gonic/gin"
 	"github.com/tsatke/verbose-broccoli/internal/app"
 )
@@ -18,10 +20,15 @@ func main() {
 		panic(err)
 	}
 
+	cfg, err := config.LoadDefaultConfig(context.Background())
+	if err != nil {
+		panic(err)
+	}
+
 	a := app.New(
 		lis,
-		app.NewMemUserService(),
-		app.NewMemObjectStorage(),
+		u,
+		app.NewS3Storage(cfg),
 		app.NewMemDocumentIndex(),
 		app.NewMemPermissionService(),
 	)
