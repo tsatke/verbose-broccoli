@@ -9,23 +9,21 @@ import (
 )
 
 type App struct {
-	srv         *http.Server
-	listener    net.Listener
-	router      *gin.Engine
-	objects     ObjectStorage
-	index       DocumentIndex
-	permissions PermissionService
-	users       UserService
+	srv      *http.Server
+	listener net.Listener
+	router   *gin.Engine
+	objects  ObjectStorage
+	index    DocumentIndex
+	auth     AuthService
 }
 
-func New(l net.Listener, u UserService, o ObjectStorage, i DocumentIndex, p PermissionService) *App {
+func New(l net.Listener, o ObjectStorage, i DocumentIndex, au AuthService) *App {
 	a := &App{
-		listener:    l,
-		router:      gin.Default(),
-		objects:     o,
-		index:       i,
-		permissions: p,
-		users:       u,
+		listener: l,
+		router:   gin.Default(),
+		objects:  o,
+		index:    i,
+		auth:     au,
 	}
 	a.setupRoutes()
 	a.srv = &http.Server{

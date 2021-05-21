@@ -34,10 +34,9 @@ func (suite *AppSuite) SetupTest() {
 
 	suite.app = New(
 		lis,
-		NewMemUserService(),
 		NewMemObjectStorage(),
 		NewMemDocumentIndex(),
-		NewMemPermissionService(),
+		NewMemAuthService(),
 	)
 	go func() {
 		if err := suite.app.Run(); err != nil {
@@ -58,20 +57,8 @@ func (suite *AppSuite) Request(method, path string) TestRequest {
 	}
 }
 
-func (suite *AppSuite) Login() {
-	username := "someUsername"
-	password := "somePassword"
-	suite.NoError(suite.app.users.CreateUser(username, password))
-
-	suite.
-		Request("POST", "/user/login").
-		Body(M{
-			"username": username,
-			"password": password,
-		}).
-		Expect(http.StatusOK, M{
-			"success": true,
-		})
+func (suite *AppSuite) createUser(user, pass string) {
+	suite.app.auth.(*MemAuthService).data[user] = pass
 }
 
 func (suite *AppSuite) performTestRequest(r TestRequest, wantStatus int, wantResponse M) {

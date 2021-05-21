@@ -1,16 +1,18 @@
 package app
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
+	"github.com/gin-gonic/gin"
 )
 
 func (a *App) setupRoutes() {
 	a.router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
+		AllowOrigins:     []string{"http://localhost:3000"},
 		AllowHeaders:     []string{"Origin", "Content-Type"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
@@ -19,6 +21,24 @@ func (a *App) setupRoutes() {
 
 	store := cookie.NewStore([]byte("secret"))
 	a.router.Use(sessions.Sessions("SessionID", store))
+
+	a.router.Use(func(c *gin.Context) {
+		// don't check the token for the these routes
+		switch c.FullPath() {
+		case "/rest/healthcheck",
+			"/rest/auth/login":
+			return
+		}
+
+		sess := sessions.Default(c)
+		if sess.Get(UserIDKey) == nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, Response{
+				Success: false,
+				Message: "not logged in",
+			})
+			return
+		}
+	})
 
 	rest := a.router.Group("/rest")
 	{
@@ -34,10 +54,11 @@ func (a *App) setupRoutes() {
 			doc.GET("", a.HandlerGetDocuments())
 			doc.POST("", a.HandlerPostDocument())
 		}
-		user := rest.Group("/user")
+		auth := rest.Group("/auth")
 		{
-			user.POST("/login", a.HandlerUserLogin())
-			user.GET("/logout", a.HandlerUserLogout())
+			auth.POST("/login", a.HandlerAuthLogin())
+			auth.GET("/logout", a.HandlerAuthLogout())
+			auth.POST("/challenge", a.HandlerAuthChallenge())
 		}
 	}
 }
