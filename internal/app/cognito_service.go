@@ -18,7 +18,6 @@ type cognitoIdentityProviderAPI interface {
 
 type CognitoService struct {
 	poolID   string
-	region   string
 	clientID string
 
 	idProvider cognitoIdentityProviderAPI
