@@ -82,7 +82,7 @@ func (i *AuroraIndex) Create(header DocumentHeader, acl ACL) error {
 
 		_, err = docHeaderInsert.Exec(header.ID, header.Name, header.Size)
 		if err != nil {
-			return err
+			return fmt.Errorf("insert header: %w", err)
 		}
 
 		docACLInsert, err := tx.Prepare(`INSERT INTO au_document_acls (doc_id, username, read, write, delete, share) VALUES ($1, $2, $3, $4, $5, $6)`)
@@ -96,7 +96,7 @@ func (i *AuroraIndex) Create(header DocumentHeader, acl ACL) error {
 		for _, perm := range acl.Permissions {
 			_, err = docACLInsert.Exec(header.ID, perm.Username, perm.Read, perm.Write, perm.Delete, perm.Share)
 			if err != nil {
-				return err
+				return fmt.Errorf("insert ACL: %w", err)
 			}
 		}
 
