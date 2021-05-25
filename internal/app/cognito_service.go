@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	cip "github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider/types"
+	"github.com/tsatke/verbose-broccoli/internal/app/config"
 )
 
 //go:generate mockery --inpackage --testonly --case snake --name cognitoIdentityProviderAPI --filename cognito_service_mock_test.go
@@ -23,12 +24,12 @@ type CognitoService struct {
 	idProvider cognitoIdentityProviderAPI
 }
 
-func NewCognitoService(cfg aws.Config) *CognitoService {
+func NewCognitoService(cfg config.Config) *CognitoService {
 	return &CognitoService{
-		poolID:   "eu-central-1_GMmerUwP1",
-		clientID: "p21ii9e99aus77kck0qlptc4g",
+		poolID:   cfg.GetString(config.AWSCognitoPoolID),
+		clientID: cfg.GetString(config.AWSCognitoClientID),
 
-		idProvider: cip.NewFromConfig(cfg),
+		idProvider: cip.NewFromConfig(cfg.AWS),
 	}
 }
 

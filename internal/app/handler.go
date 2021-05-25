@@ -1,6 +1,9 @@
 package app
 
-const UserIDKey = "userID"
+const (
+	UserIDKey      = "UserID"
+	UserIDTokenKey = "IDToken"
+)
 
 type Response struct {
 	Success bool   `json:"success"`

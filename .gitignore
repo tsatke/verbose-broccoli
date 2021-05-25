@@ -16,3 +16,6 @@
 
 # GoLand
 .idea
+
+# App config file
+config.yaml

@@ -8,13 +8,17 @@ type MemDocumentIndex struct {
 	data map[string]DocumentHeader
 }
 
+func (m *MemDocumentIndex) ACL(s string) (ACL, error) {
+	panic("implement me")
+}
+
 func NewMemDocumentIndex() *MemDocumentIndex {
 	return &MemDocumentIndex{
 		data: map[string]DocumentHeader{},
 	}
 }
 
-func (m *MemDocumentIndex) Create(h DocumentHeader) error {
+func (m *MemDocumentIndex) Create(h DocumentHeader, acl ACL) error {
 	if _, ok := m.data[h.ID]; ok {
 		return fmt.Errorf("already exists")
 	}

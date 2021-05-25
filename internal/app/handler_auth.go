@@ -54,7 +54,8 @@ func (a *App) HandlerAuthLogin() gin.HandlerFunc {
 		}
 
 		sess := sessions.Default(c)
-		sess.Set(UserIDKey, res.Token)
+		sess.Set(UserIDKey, req.Username)
+		sess.Set(UserIDTokenKey, res.Token)
 		if err := sess.Save(); err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, Response{
 				Success: false,

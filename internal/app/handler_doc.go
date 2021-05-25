@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -39,8 +40,23 @@ func (a *App) HandlerGetContent() gin.HandlerFunc {
 func (a *App) HandlerPostContent() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
-		// sess := sessions.Default(c)
-		// userID := sess.Get(UserIDKey).(string)
+		sess := sessions.Default(c)
+		userID := sess.Get(UserIDKey).(string)
+
+		acl, err := a.index.ACL(id)
+		if err != nil {
+			_ = c.Error(err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, Response{
+				Message: "get ACL for document",
+			})
+			return
+		}
+		if _, ok := acl.Permissions[userID]; !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, Response{
+				Message: "write content",
+			})
+			return
+		}
 
 		ff, err := c.FormFile("file")
 		if err != nil {
@@ -62,6 +78,7 @@ func (a *App) HandlerPostContent() gin.HandlerFunc {
 		}()
 
 		if err := a.objects.Create(id, f); err != nil {
+			_ = c.Error(err)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, Response{
 				Message: "failed to create object",
 			})
@@ -146,6 +163,9 @@ func (a *App) HandlerPostDocument() gin.HandlerFunc {
 		Message string `json:"message,omitempty"`
 	}
 	return func(c *gin.Context) {
+		sess := sessions.Default(c)
+		userID := sess.Get(UserIDKey).(string)
+
 		var req request
 		if err := c.ShouldBindJSON(&req); err != nil || req.Filename == "" || req.Size <= 0 {
 			c.AbortWithStatusJSON(http.StatusBadRequest, Response{
@@ -161,7 +181,18 @@ func (a *App) HandlerPostDocument() gin.HandlerFunc {
 			ID:   id,
 			Name: req.Filename,
 			Size: req.Size,
+		}, ACL{
+			Permissions: map[string]Permission{
+				userID: {
+					Username: userID,
+					Read:     true,
+					Write:    true,
+					Delete:   true,
+					Share:    true,
+				},
+			},
 		}); err != nil {
+			_ = c.Error(err)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, Response{
 				Success: false,
 				Message: "unable to create index entry",

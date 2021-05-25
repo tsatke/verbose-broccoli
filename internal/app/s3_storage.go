@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/smithy-go"
+	"github.com/tsatke/verbose-broccoli/internal/app/config"
 )
 
 //go:generate mockery --inpackage --testonly --case snake --name s3StorageClientAPI --filename s3_storage_mock_test.go
@@ -25,10 +26,10 @@ type S3Storage struct {
 	client s3StorageClientAPI
 }
 
-func NewS3Storage(cfg aws.Config) *S3Storage {
+func NewS3Storage(cfg config.Config) *S3Storage {
 	return &S3Storage{
-		bucket: "verbose-broccoli-test",
-		client: s3.NewFromConfig(cfg),
+		bucket: cfg.GetString(config.AWSS3Bucket),
+		client: s3.NewFromConfig(cfg.AWS),
 	}
 }
 
