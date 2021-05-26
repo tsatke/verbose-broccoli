@@ -6,15 +6,21 @@ import (
 
 type MemDocumentIndex struct {
 	data map[string]DocumentHeader
+	acls map[string]ACL
 }
 
-func (m *MemDocumentIndex) ACL(s string) (ACL, error) {
-	panic("implement me")
+func (m *MemDocumentIndex) ACL(id string) (ACL, error) {
+	if acl, ok := m.acls[id]; ok {
+		return acl, nil
+	}
+
+	return ACL{}, fmt.Errorf("does not exist")
 }
 
 func NewMemDocumentIndex() *MemDocumentIndex {
 	return &MemDocumentIndex{
 		data: map[string]DocumentHeader{},
+		acls: map[string]ACL{},
 	}
 }
 
@@ -24,6 +30,7 @@ func (m *MemDocumentIndex) Create(h DocumentHeader, acl ACL) error {
 	}
 
 	m.data[h.ID] = h
+	m.acls[h.ID] = acl
 
 	return nil
 }
@@ -42,5 +49,6 @@ func (m *MemDocumentIndex) Delete(id string) error {
 	}
 
 	delete(m.data, id)
+	delete(m.acls, id)
 	return nil
 }
