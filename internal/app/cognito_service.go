@@ -48,14 +48,12 @@ func (s *CognitoService) Login(user, pass string) (LoginResult, error) {
 
 	if resp.AuthenticationResult != nil {
 		return LoginResult{
-			Done:    true,
 			Success: true,
 			Token:   *resp.AuthenticationResult.IdToken,
 		}, nil
 	}
 
 	return LoginResult{
-		Done:      false,
 		Success:   true,
 		Challenge: string(resp.ChallengeName),
 	}, nil
@@ -66,7 +64,8 @@ func (s *CognitoService) AnswerChallenge(user, challenge, payload string) (Login
 		ChallengeName: types.ChallengeNameType(challenge),
 		ClientId:      aws.String(s.clientID),
 		ChallengeResponses: map[string]string{
-			challenge: payload,
+			challenge:  payload,
+			"USERNAME": user,
 		},
 	})
 
@@ -75,7 +74,6 @@ func (s *CognitoService) AnswerChallenge(user, challenge, payload string) (Login
 	}
 
 	return LoginResult{
-		Done:    true,
 		Success: true,
 		Token:   *resp.AuthenticationResult.IdToken,
 	}, nil

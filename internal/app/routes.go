@@ -10,15 +10,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (a *App) setupRoutes() {
+func (a *App) setupCORS() {
+	if len(a.corsOrigins) == 0 {
+		return
+	}
+
 	a.router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowOrigins:     a.corsOrigins,
 		AllowHeaders:     []string{"Origin", "Content-Type"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
+}
 
+func (a *App) setupRoutes() {
 	store := cookie.NewStore([]byte("secret"))
 	a.router.Use(sessions.Sessions("SessionID", store))
 
@@ -26,6 +32,7 @@ func (a *App) setupRoutes() {
 		// don't check the token for the these routes
 		switch c.FullPath() {
 		case "/rest/healthcheck",
+			"/rest/auth/challenge",
 			"/rest/auth/login":
 			return
 		}
@@ -43,6 +50,7 @@ func (a *App) setupRoutes() {
 	rest := a.router.Group("/rest")
 	{
 		rest.GET("/healthcheck", a.HandlerHealthcheck())
+		rest.GET("/user", a.HandlerUser())
 		doc := rest.Group("/doc")
 		{
 			doc.GET("/:id/content", a.HandlerGetContent())

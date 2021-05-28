@@ -32,12 +32,11 @@ func (suite *AppSuite) SetupTest() {
 	lis, err := nettest.NewLocalListener("tcp")
 	suite.NoError(err)
 
-	suite.app = New(
-		lis,
-		NewMemObjectStorage(),
-		NewMemDocumentIndex(),
-		NewMemAuthService(),
-	)
+	suite.app = New(lis)
+	suite.IsType(&MemObjectStorage{}, suite.app.objects)
+	suite.IsType(&MemDocumentIndex{}, suite.app.index)
+	suite.IsType(&MemAuthService{}, suite.app.auth)
+
 	go func() {
 		if err := suite.app.Run(); err != nil {
 			panic(err)

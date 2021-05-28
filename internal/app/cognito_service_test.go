@@ -59,7 +59,6 @@ func (suite *CognitoServiceTestSuite) TestLogin() {
 	res, err := suite.service.Login("testuser", "testpass")
 	suite.NoError(err)
 	suite.Equal(LoginResult{
-		Done:      true,
 		Success:   true,
 		Challenge: "",
 		Token:     "testtoken",
@@ -87,7 +86,6 @@ func (suite *CognitoServiceTestSuite) TestLoginWithChallenge() {
 	res, err := suite.service.Login("testuser", "testpass")
 	suite.NoError(err)
 	suite.Equal(LoginResult{
-		Done:      false,
 		Success:   true,
 		Challenge: "testchallenge",
 		Token:     "",

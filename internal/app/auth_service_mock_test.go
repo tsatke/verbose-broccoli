@@ -10,14 +10,14 @@ type MockAuthService struct {
 }
 
 // AnswerChallenge provides a mock function with given fields: user, challenge, payload
-func (_m *MockAuthService) AnswerChallenge(user string, challenge string, payload string) (bool, error) {
+func (_m *MockAuthService) AnswerChallenge(user string, challenge string, payload string) (LoginResult, error) {
 	ret := _m.Called(user, challenge, payload)
 
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(string, string, string) bool); ok {
+	var r0 LoginResult
+	if rf, ok := ret.Get(0).(func(string, string, string) LoginResult); ok {
 		r0 = rf(user, challenge, payload)
 	} else {
-		r0 = ret.Get(0).(bool)
+		r0 = ret.Get(0).(LoginResult)
 	}
 
 	var r1 error

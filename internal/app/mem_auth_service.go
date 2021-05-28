@@ -19,7 +19,6 @@ func (m *MemAuthService) Login(user, pass string) (LoginResult, error) {
 		token := uuid.New().String()
 		m.tokens[token] = user
 		return LoginResult{
-			Done:    true,
 			Success: true,
 			Token:   token,
 		}, nil

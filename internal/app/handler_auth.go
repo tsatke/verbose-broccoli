@@ -44,10 +44,9 @@ func (a *App) HandlerAuthLogin() gin.HandlerFunc {
 			return
 		}
 
-		if !res.Done {
+		if res.Challenge != "" {
 			c.JSON(http.StatusOK, response{
 				Success:   true,
-				Message:   "request not done yet",
 				Challenge: res.Challenge,
 			})
 			return
@@ -72,8 +71,14 @@ func (a *App) HandlerAuthLogin() gin.HandlerFunc {
 
 func (a *App) HandlerAuthChallenge() gin.HandlerFunc {
 	type request struct {
-		Challenge      string `json:"challenge,omitempty"`
-		ClientResponse string `json:"client_response,omitempty"`
+		Username       string `json:"username"`
+		Challenge      string `json:"challenge"`
+		ClientResponse string `json:"client_response"`
+	}
+	type response struct {
+		Success   bool   `json:"success"`
+		Message   string `json:"message,omitempty"`
+		Challenge string `json:"challenge,omitempty"`
 	}
 
 	return func(c *gin.Context) {
@@ -85,6 +90,46 @@ func (a *App) HandlerAuthChallenge() gin.HandlerFunc {
 			})
 			return
 		}
+
+		res, err := a.auth.AnswerChallenge(req.Username, req.Challenge, req.ClientResponse)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, Response{
+				Success: false,
+			})
+			return
+		}
+
+		if !res.Success {
+			c.JSON(http.StatusUnauthorized, response{
+				Success: false,
+				Message: "invalid credentials",
+			})
+			return
+		}
+
+		// probably happens when there are multiple challenges
+		if res.Challenge != "" {
+			c.JSON(http.StatusOK, response{
+				Success:   true,
+				Challenge: res.Challenge,
+			})
+			return
+		}
+
+		sess := sessions.Default(c)
+		sess.Set(UserIDKey, req.Username)
+		sess.Set(UserIDTokenKey, res.Token)
+		if err := sess.Save(); err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, Response{
+				Success: false,
+				Message: "unable to save session",
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, response{
+			Success: true,
+		})
 	}
 }
 
@@ -103,6 +148,19 @@ func (a *App) HandlerAuthLogout() gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, Response{
 			Success: true,
+		})
+	}
+}
+
+func (a *App) HandlerUser() gin.HandlerFunc {
+	type response struct {
+		Username string `json:"username"`
+	}
+	return func(c *gin.Context) {
+		sess := sessions.Default(c)
+
+		c.JSON(http.StatusOK, response{
+			Username: sess.Get(UserIDKey).(string),
 		})
 	}
 }
