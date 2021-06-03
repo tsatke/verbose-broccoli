@@ -23,16 +23,6 @@ func NewPostgresDocumentRepo(p *PostgresDatabaseProvider) *PostgresDocumentRepo 
 	}
 }
 
-func (i *PostgresDocumentRepo) initDB() error {
-	return tx(i.db, func(tx *sql.Tx) error {
-		_, err := tx.Exec(init_sql)
-		if err != nil {
-			return fmt.Errorf("exec init: %w", err)
-		}
-		return nil
-	})
-}
-
 func (i *PostgresDocumentRepo) Create(header DocumentHeader, acl ACL) error {
 	return tx(i.db, func(tx *sql.Tx) error {
 		docHeaderInsert, err := tx.Prepare(`INSERT INTO au_document_headers (doc_id, name, size, owner, created) VALUES ($1, $2, $3, $4, $5)`)
