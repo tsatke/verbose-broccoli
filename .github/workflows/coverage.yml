@@ -1,4 +1,4 @@
-name: Go
+name: Coverage
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         go_version: [ 1.16 ]
-        os: [ ubuntu-latest, windows-latest, macOS-latest ]
+        os: [ ubuntu-latest ]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/cache@v2
@@ -27,5 +27,12 @@ jobs:
         with:
           go-version: ${{ matrix.go_version }}
 
-      - name: Test
-        run: go test -v ./...
+      - name: Generate coverage
+        run: go test -coverprofile="cover.out" -v ./...
+
+      - name: Report coverage
+        if: contains(matrix.os, 'ubuntu')
+        run: |
+          curl https://deepsource.io/cli | sh
+          export DEEPSOURCE_DSN=https://937c6f20f5e744c88630fceb4a485bc4@deepsource.io
+          ./bin/deepsource report --analyzer test-coverage --key go --value-file ./cover.out
