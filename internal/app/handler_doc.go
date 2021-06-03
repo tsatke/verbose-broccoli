@@ -1,12 +1,12 @@
 package app
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func (a *App) HandlerGetContent() gin.HandlerFunc {
@@ -54,6 +54,7 @@ func (a *App) HandlerPostContent() gin.HandlerFunc {
 
 		ff, err := c.FormFile("file")
 		if err != nil {
+			fmt.Println(err)
 			c.AbortWithStatusJSON(http.StatusBadRequest, Response{
 				Message: "failed to receive file",
 			})
@@ -88,7 +89,6 @@ func (a *App) HandlerPostContent() gin.HandlerFunc {
 func (a *App) HandlerGetDocument() gin.HandlerFunc {
 	type response struct {
 		Name string `json:"name"`
-		Size int64  `json:"size"`
 	}
 
 	return func(c *gin.Context) {
@@ -106,7 +106,6 @@ func (a *App) HandlerGetDocument() gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, response{
 			Name: header.Name,
-			Size: header.Size,
 		})
 	}
 }
@@ -149,7 +148,6 @@ func (a *App) HandlerGetDocuments() gin.HandlerFunc {
 func (a *App) HandlerPostDocument() gin.HandlerFunc {
 	type request struct {
 		Filename string `json:"filename"`
-		Size     int64  `json:"size"`
 	}
 	type response struct {
 		Success bool   `json:"success"`
@@ -161,7 +159,7 @@ func (a *App) HandlerPostDocument() gin.HandlerFunc {
 		userID := sess.Get(UserIDKey).(string)
 
 		var req request
-		if err := c.ShouldBindJSON(&req); err != nil || req.Filename == "" || req.Size <= 0 {
+		if err := c.ShouldBindJSON(&req); err != nil || req.Filename == "" {
 			c.AbortWithStatusJSON(http.StatusBadRequest, Response{
 				Success: false,
 				Message: "invalid JSON payload",
@@ -169,12 +167,13 @@ func (a *App) HandlerPostDocument() gin.HandlerFunc {
 			return
 		}
 
-		id := DocID(uuid.New().String())
+		id := DocID(a.genUUID().String())
 
 		if err := a.documents.Create(DocumentHeader{
-			ID:   id,
-			Name: req.Filename,
-			Size: req.Size,
+			ID:      id,
+			Name:    req.Filename,
+			Owner:   userID,
+			Created: a.clock.Now(),
 		}, ACL{
 			Permissions: map[string]Permission{
 				userID: {

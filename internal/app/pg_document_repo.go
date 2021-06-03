@@ -25,7 +25,7 @@ func NewPostgresDocumentRepo(p *PostgresDatabaseProvider) *PostgresDocumentRepo 
 
 func (i *PostgresDocumentRepo) Create(header DocumentHeader, acl ACL) error {
 	return tx(i.db, func(tx *sql.Tx) error {
-		docHeaderInsert, err := tx.Prepare(`INSERT INTO au_document_headers (doc_id, name, size, owner, created) VALUES ($1, $2, $3, $4, $5)`)
+		docHeaderInsert, err := tx.Prepare(`INSERT INTO au_document_headers (doc_id, name, owner, created) VALUES ($1, $2, $3, $4)`)
 		if err != nil {
 			return fmt.Errorf("prepare header insert: %w", err)
 		}
@@ -33,7 +33,7 @@ func (i *PostgresDocumentRepo) Create(header DocumentHeader, acl ACL) error {
 			_ = docHeaderInsert.Close()
 		}()
 
-		_, err = docHeaderInsert.Exec(header.ID, header.Name, header.Size, header.Owner, header.Created)
+		_, err = docHeaderInsert.Exec(header.ID, header.Name, header.Owner, header.Created)
 		if err != nil {
 			return fmt.Errorf("insert header: %w", err)
 		}
@@ -58,10 +58,10 @@ func (i *PostgresDocumentRepo) Create(header DocumentHeader, acl ACL) error {
 }
 
 func (i *PostgresDocumentRepo) Get(id DocID) (DocumentHeader, error) {
-	row := i.db.QueryRow(`SELECT doc_id, name, size FROM au_document_headers WHERE doc_id = $1`, id)
+	row := i.db.QueryRow(`SELECT doc_id, name FROM au_document_headers WHERE doc_id = $1`, id)
 
 	var h DocumentHeader
-	if err := row.Scan(&h.ID, &h.Name, &h.Size); err != nil {
+	if err := row.Scan(&h.ID, &h.Name); err != nil {
 		return DocumentHeader{}, fmt.Errorf("scan: %w", err)
 	}
 	return h, nil

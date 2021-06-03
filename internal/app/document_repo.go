@@ -8,7 +8,6 @@ type (
 	DocumentHeader struct {
 		ID      DocID
 		Name    string
-		Size    int64
 		Owner   string
 		Created time.Time
 		Updated time.Time

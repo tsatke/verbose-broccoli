@@ -1,47 +1,111 @@
 package app
 
-import "net/http"
+import (
+	"io"
+	"net/http"
+	"time"
 
-func (suite *AppSuite) TestGetContentNoLogin() {
+	"github.com/google/uuid"
+)
+
+func (suite *AppSuite) TestPostDocumentNoLogin() {
 	suite.
-		Request("GET", "/doc/abc/content").
+		Request("POST", "/doc").
+		Body(M{
+			"filename": "myfile",
+			"size":     1234,
+		}).
 		Expect(http.StatusUnauthorized, M{
 			"message": "not logged in",
 			"success": false,
 		})
 }
 
-func (suite *AppSuite) TestGetContentNoDocument() {
-	suite.login()
+func (suite *AppSuite) TestPostDocument() {
+	user := suite.login()
+
+	testUUID := uuid.New()
+	suite.app.genUUID = func() uuid.UUID {
+		return testUUID
+	}
+	clock := SingleTimestampClock{time.Now()}
+	suite.app.clock = clock
 
 	suite.
-		Request("GET", "/doc/abc/content").
-		Expect(http.StatusBadRequest, M{
-			"message": "no content for id",
-			"success": false,
+		Request("POST", "/doc").
+		Body(M{
+			"filename": "myfile",
+		}).
+		Expect(http.StatusOK, M{
+			"success": true,
+			"id":      testUUID.String(),
 		})
+
+	// check that document is created correctly
+	doc, err := suite.app.documents.Get(DocID(testUUID.String()))
+	suite.NoError(err)
+	suite.Equal(DocumentHeader{
+		ID:      DocID(testUUID.String()),
+		Name:    "myfile",
+		Owner:   user,
+		Created: clock.Timestamp,
+		Updated: time.Time{},
+	}, doc)
+
+	// check that permissions are set up correctly
+	acl, err := suite.app.documents.ACL(DocID(testUUID.String()))
+	suite.NoError(err)
+	suite.Equal(ACL{
+		Permissions: map[string]Permission{
+			user: {
+				Username: user,
+				Read:     true,
+				Write:    true,
+				Delete:   true,
+				Share:    true,
+			},
+		},
+	}, acl)
 }
 
-func (suite *AppSuite) TestGetContent() {
-	suite.login()
-	suite.createContent("abc", []byte("hello"))
+func (suite *AppSuite) TestPostContent() {
+	user := suite.login()
+	_ = user
 
-	suite.
-		Request("GET", "/doc/abc/content").
-		ExpectRaw(http.StatusOK, []byte("hello"))
-}
+	data := []byte("hello")
+	testUUID := uuid.New()
+	suite.app.genUUID = func() uuid.UUID {
+		return testUUID
+	}
+	clock := SingleTimestampClock{time.Now()}
+	suite.app.clock = clock
 
-func (suite *AppSuite) TestGetContentMultipleTimes() {
-	suite.login()
-	suite.createContent("abc", []byte("hello"))
+	// create required document header
+	suite.
+		Request("POST", "/doc").
+		Body(M{
+			"filename": "myfile",
+		}).
+		Expect(http.StatusOK, M{
+			"success": true,
+			"id":      testUUID.String(),
+		})
 
+	// post content
 	suite.
-		Request("GET", "/doc/abc/content").
-		ExpectRaw(http.StatusOK, []byte("hello"))
-	suite.
-		Request("GET", "/doc/abc/content").
-		ExpectRaw(http.StatusOK, []byte("hello"))
-	suite.
-		Request("GET", "/doc/abc/content").
-		ExpectRaw(http.StatusOK, []byte("hello"))
+		Request("POST", "/doc/"+testUUID.String()+"/content").
+		File("file", "ignored", data).
+		Expect(http.StatusOK, M{
+			"success": true,
+		})
+
+	// check that content is stored correctly
+	rdc, err := suite.app.objects.Read(DocID(testUUID.String()))
+	suite.NoError(err)
+
+	content, err := io.ReadAll(rdc)
+	suite.NoError(err)
+	suite.NoError(rdc.Close())
+
+	suite.Equal(data, content)
 }

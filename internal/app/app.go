@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 )
 
@@ -15,6 +16,8 @@ type App struct {
 	corsOrigins []string
 	listener    net.Listener
 	router      *gin.Engine
+	genUUID     func() uuid.UUID
+	clock       Clock
 	objects     ObjectStorage
 	documents   DocumentRepo
 	auth        AuthService
@@ -24,6 +27,8 @@ func New(lis net.Listener, opts ...Option) *App {
 	a := &App{
 		listener: lis,
 		log:      zerolog.Nop(),
+		genUUID:  uuid.New,
+		clock:    TimeClock{},
 	}
 
 	for _, opt := range opts {

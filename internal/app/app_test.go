@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/cookiejar"
 	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/net/nettest"
 )
@@ -58,15 +60,28 @@ func (suite *AppSuite) Request(method, path string) TestRequest {
 	}
 }
 
-func (suite *AppSuite) login() {
-	suite.createUser("testuser", "testpass")
+func (suite *AppSuite) login() string {
+	user := uuid.New().String()
+	pass := uuid.New().String()
+
+	suite.createUser(user, pass)
 
 	suite.
 		Request("POST", "/auth/login").
 		Body(M{
-			"username": "testuser",
-			"password": "testpass",
+			"username": user,
+			"password": pass,
 		}).
+		Expect(http.StatusOK, M{
+			"success": true,
+		})
+
+	return user
+}
+
+func (suite *AppSuite) logout() {
+	suite.
+		Request("GET", "/auth/logout").
 		Expect(http.StatusOK, M{
 			"success": true,
 		})
@@ -82,11 +97,18 @@ func (suite *AppSuite) createContent(id string, content []byte) {
 
 func (suite *AppSuite) performTestRequest(r TestRequest, wantStatus int, wantResponse M) {
 	var buf bytes.Buffer
-	enc := json.NewEncoder(&buf)
-	suite.NoError(enc.Encode(r.body))
+	if r.rawBody != nil {
+		_, _ = buf.Write(r.rawBody)
+	} else {
+		enc := json.NewEncoder(&buf)
+		suite.NoError(enc.Encode(r.body))
+	}
 
 	req, err := http.NewRequest(r.method, "http://"+suite.app.listener.Addr().String()+"/rest"+r.path, &buf)
 	suite.NoError(err)
+	for _, header := range r.header {
+		req.Header.Add(header[0], header[1])
+	}
 
 	client := &http.Client{
 		Jar:     suite.cookies,
@@ -116,6 +138,9 @@ func (suite *AppSuite) performTestRequestRaw(r TestRequest, wantStatus int, want
 
 	req, err := http.NewRequest(r.method, "http://"+suite.app.listener.Addr().String()+"/rest"+r.path, &buf)
 	suite.NoError(err)
+	for _, header := range r.header {
+		req.Header.Add(header[0], header[1])
+	}
 
 	client := &http.Client{
 		Jar:     suite.cookies,
@@ -138,16 +163,37 @@ type M map[string]interface{}
 type Header [2]string
 
 type TestRequest struct {
-	suite  *AppSuite
-	method string
-	path   string
-	header []Header
-	body   M
+	suite   *AppSuite
+	method  string
+	path    string
+	header  []Header
+	body    M
+	rawBody []byte
 }
 
 func (r TestRequest) Body(b M) TestRequest {
 	r.body = b
 	return r
+}
+
+func (r TestRequest) RawBody(b []byte) TestRequest {
+	r.rawBody = b
+	return r
+}
+
+func (r TestRequest) File(field, name string, data []byte) TestRequest {
+	var buf bytes.Buffer
+	mw := multipart.NewWriter(&buf)
+	w, err := mw.CreateFormFile(field, name)
+	r.suite.NoError(err)
+
+	_, err = w.Write(data)
+	r.suite.NoError(err)
+	r.suite.NoError(mw.Close())
+
+	return r.
+		Header("Content-Type", "multipart/form-data;boundary="+mw.Boundary()).
+		RawBody(buf.Bytes())
 }
 
 func (r TestRequest) Header(key, val string) TestRequest {

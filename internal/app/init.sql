@@ -17,7 +17,6 @@ CREATE TABLE "au_document_headers"
     "owner"     varchar(255) not null,
     "created"   timestamptz  not null,
     "updated"   timestamptz,                  -- null when there's no content stored yet
-    "size"      bigint       not null,
     "folder_id" bigserial    not null,
 
     CONSTRAINT fk_folder_id

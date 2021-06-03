@@ -41,11 +41,11 @@ func (suite *PostgresDocumentRepoTestSuite) TestCreate() {
 	suite.mock.
 		ExpectBegin()
 	prepHeader := suite.mock.
-		ExpectPrepare(`INSERT INTO au_document_headers (doc_id, name, size, owner, created) VALUES ($1, $2, $3, $4, $5)`).
+		ExpectPrepare(`INSERT INTO au_document_headers (doc_id, name, owner, created) VALUES ($1, $2, $3, $4)`).
 		WillBeClosed()
 	prepHeader.
 		ExpectExec().
-		WithArgs("docID", "docName", 1234, "username", docCreateTime).
+		WithArgs("docID", "docName", "username", docCreateTime).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	prepACL := suite.mock.
 		ExpectPrepare(`INSERT INTO au_document_acls (doc_id, username, read, write, delete, share) VALUES ($1, $2, $3, $4, $5, $6)`).
@@ -60,7 +60,6 @@ func (suite *PostgresDocumentRepoTestSuite) TestCreate() {
 	suite.NoError(suite.index.Create(DocumentHeader{
 		ID:      "docID",
 		Name:    "docName",
-		Size:    1234,
 		Owner:   "username",
 		Created: docCreateTime,
 	}, ACL{
@@ -83,7 +82,7 @@ func (suite *PostgresDocumentRepoTestSuite) TestCreateFailHeaderPrepare() {
 	suite.mock.
 		ExpectBegin()
 	suite.mock.
-		ExpectPrepare(`INSERT INTO au_document_headers (doc_id, name, size, owner, created) VALUES ($1, $2, $3, $4, $5)`).
+		ExpectPrepare(`INSERT INTO au_document_headers (doc_id, name, owner, created) VALUES ($1, $2, $3, $4)`).
 		WillReturnError(testErr)
 	suite.mock.
 		ExpectRollback()
@@ -91,7 +90,6 @@ func (suite *PostgresDocumentRepoTestSuite) TestCreateFailHeaderPrepare() {
 	suite.ErrorIs(suite.index.Create(DocumentHeader{
 		ID:      "docID",
 		Name:    "docName",
-		Size:    1234,
 		Owner:   "username",
 		Created: docCreateTime,
 	}, ACL{
@@ -114,11 +112,11 @@ func (suite *PostgresDocumentRepoTestSuite) TestCreateFailHeader() {
 	suite.mock.
 		ExpectBegin()
 	prepHeader := suite.mock.
-		ExpectPrepare(`INSERT INTO au_document_headers (doc_id, name, size, owner, created) VALUES ($1, $2, $3, $4, $5)`).
+		ExpectPrepare(`INSERT INTO au_document_headers (doc_id, name, owner, created) VALUES ($1, $2, $3, $4)`).
 		WillBeClosed()
 	prepHeader.
 		ExpectExec().
-		WithArgs("docID", "docName", 1234, "username", docCreateTime).
+		WithArgs("docID", "docName", "username", docCreateTime).
 		WillReturnError(testErr)
 	suite.mock.
 		ExpectRollback()
@@ -126,7 +124,6 @@ func (suite *PostgresDocumentRepoTestSuite) TestCreateFailHeader() {
 	suite.ErrorIs(suite.index.Create(DocumentHeader{
 		ID:      "docID",
 		Name:    "docName",
-		Size:    1234,
 		Owner:   "username",
 		Created: docCreateTime,
 	}, ACL{
@@ -149,11 +146,11 @@ func (suite *PostgresDocumentRepoTestSuite) TestCreateFailACLPrepare() {
 	suite.mock.
 		ExpectBegin()
 	prepHeader := suite.mock.
-		ExpectPrepare(`INSERT INTO au_document_headers (doc_id, name, size, owner, created) VALUES ($1, $2, $3, $4, $5)`).
+		ExpectPrepare(`INSERT INTO au_document_headers (doc_id, name, owner, created) VALUES ($1, $2, $3, $4)`).
 		WillBeClosed()
 	prepHeader.
 		ExpectExec().
-		WithArgs("docID", "docName", 1234, "username", docCreateTime).
+		WithArgs("docID", "docName", "username", docCreateTime).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	suite.mock.
 		ExpectPrepare(`INSERT INTO au_document_acls (doc_id, username, read, write, delete, share) VALUES ($1, $2, $3, $4, $5, $6)`).
@@ -164,7 +161,6 @@ func (suite *PostgresDocumentRepoTestSuite) TestCreateFailACLPrepare() {
 	suite.ErrorIs(suite.index.Create(DocumentHeader{
 		ID:      "docID",
 		Name:    "docName",
-		Size:    1234,
 		Owner:   "username",
 		Created: docCreateTime,
 	}, ACL{
@@ -187,11 +183,11 @@ func (suite *PostgresDocumentRepoTestSuite) TestCreateFailACL() {
 	suite.mock.
 		ExpectBegin()
 	prepHeader := suite.mock.
-		ExpectPrepare(`INSERT INTO au_document_headers (doc_id, name, size, owner, created) VALUES ($1, $2, $3, $4, $5)`).
+		ExpectPrepare(`INSERT INTO au_document_headers (doc_id, name, owner, created) VALUES ($1, $2, $3, $4)`).
 		WillBeClosed()
 	prepHeader.
 		ExpectExec().
-		WithArgs("docID", "docName", 1234, "username", docCreateTime).
+		WithArgs("docID", "docName", "username", docCreateTime).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	prepACL := suite.mock.
 		ExpectPrepare(`INSERT INTO au_document_acls (doc_id, username, read, write, delete, share) VALUES ($1, $2, $3, $4, $5, $6)`).
@@ -206,7 +202,6 @@ func (suite *PostgresDocumentRepoTestSuite) TestCreateFailACL() {
 	suite.ErrorIs(suite.index.Create(DocumentHeader{
 		ID:      "docID",
 		Name:    "docName",
-		Size:    1234,
 		Owner:   "username",
 		Created: docCreateTime,
 	}, ACL{

@@ -50,3 +50,9 @@ func WithLogger(log zerolog.Logger) Option {
 		a.log = log
 	}
 }
+
+func WithClock(c Clock) Option {
+	return func(a *App) {
+		a.clock = c
+	}
+}
