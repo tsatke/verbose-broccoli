@@ -25,15 +25,9 @@ func (a *App) HandlerGetContent() gin.HandlerFunc {
 
 		_, err = io.Copy(c.Writer, content)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, Response{
-				Message: "unable to write response",
-			})
+			_ = c.Error(err)
 			return
 		}
-
-		c.JSON(http.StatusOK, Response{
-			Success: true,
-		})
 	}
 }
 
