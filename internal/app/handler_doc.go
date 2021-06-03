@@ -72,7 +72,9 @@ func (a *App) HandlerPostContent() gin.HandlerFunc {
 			_ = f.Close()
 		}()
 
-		if err := a.objects.Create(id, f); err != nil {
+		rd := io.LimitReader(f, 1<<29) // 512MB
+
+		if err := a.objects.Create(id, rd); err != nil {
 			_ = c.Error(err)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, Response{
 				Message: "failed to create object",
