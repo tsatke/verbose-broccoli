@@ -28,7 +28,7 @@ jobs:
           go-version: ${{ matrix.go_version }}
 
       - name: Test
-        run: go test -coverprofile=cover.out -v ./...
+        run: go test -coverprofile="cover.out" -v ./...
 
       - name: Report coverage
         if: contains(matrix.os, 'ubuntu')
