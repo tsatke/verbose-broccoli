@@ -11,7 +11,7 @@ import (
 
 func (a *App) HandlerGetContent() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id := c.Param("id")
+		id := DocID(c.Param("id"))
 		// sess := sessions.Default(c)
 		// userID := sess.Get(UserIDKey).(string)
 
@@ -39,11 +39,11 @@ func (a *App) HandlerGetContent() gin.HandlerFunc {
 
 func (a *App) HandlerPostContent() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id := c.Param("id")
+		id := DocID(c.Param("id"))
 		sess := sessions.Default(c)
 		userID := sess.Get(UserIDKey).(string)
 
-		acl, err := a.index.ACL(id)
+		acl, err := a.documents.ACL(id)
 		if err != nil {
 			_ = c.Error(err)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, Response{
@@ -98,11 +98,11 @@ func (a *App) HandlerGetDocument() gin.HandlerFunc {
 	}
 
 	return func(c *gin.Context) {
-		id := c.Param("id")
+		id := DocID(c.Param("id"))
 		// sess := sessions.Default(c)
 		// userID := sess.Get(UserIDKey).(string)
 
-		header, err := a.index.GetByID(id)
+		header, err := a.documents.Get(id)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusNotFound, Response{
 				Message: "failed to obtain document",
@@ -119,7 +119,7 @@ func (a *App) HandlerGetDocument() gin.HandlerFunc {
 
 func (a *App) HandlerDeleteDocument() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id := c.Param("id")
+		id := DocID(c.Param("id"))
 		// sess := sessions.Default(c)
 		// userID := sess.Get(UserIDKey).(string)
 
@@ -130,9 +130,9 @@ func (a *App) HandlerDeleteDocument() gin.HandlerFunc {
 		// 	return
 		// }
 
-		if err := a.index.Delete(id); err != nil {
+		if err := a.documents.Delete(id); err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, Response{
-				Message: "failed to delete index entry",
+				Message: "failed to delete documents entry",
 			})
 			return
 		}
@@ -159,7 +159,7 @@ func (a *App) HandlerPostDocument() gin.HandlerFunc {
 	}
 	type response struct {
 		Success bool   `json:"success"`
-		ID      string `json:"id,omitempty"`
+		ID      DocID  `json:"id,omitempty"`
 		Message string `json:"message,omitempty"`
 	}
 	return func(c *gin.Context) {
@@ -175,9 +175,9 @@ func (a *App) HandlerPostDocument() gin.HandlerFunc {
 			return
 		}
 
-		id := uuid.New().String()
+		id := DocID(uuid.New().String())
 
-		if err := a.index.Create(DocumentHeader{
+		if err := a.documents.Create(DocumentHeader{
 			ID:   id,
 			Name: req.Filename,
 			Size: req.Size,
@@ -195,7 +195,7 @@ func (a *App) HandlerPostDocument() gin.HandlerFunc {
 			_ = c.Error(err)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, Response{
 				Success: false,
-				Message: "unable to create index entry",
+				Message: "unable to create documents entry",
 			})
 			return
 		}

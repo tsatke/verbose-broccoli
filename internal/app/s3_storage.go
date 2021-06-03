@@ -33,10 +33,10 @@ func NewS3Storage(cfg config.Config) *S3Storage {
 	}
 }
 
-func (s *S3Storage) Create(docID string, rd io.Reader) error {
+func (s *S3Storage) Create(docID DocID, rd io.Reader) error {
 	_, err := s.client.HeadObject(context.Background(), &s3.HeadObjectInput{
 		Bucket: aws.String(s.bucket),
-		Key:    aws.String(docID),
+		Key:    aws.String(string(docID)),
 	})
 	if err == nil {
 		return fmt.Errorf("object already exists")
@@ -46,7 +46,7 @@ func (s *S3Storage) Create(docID string, rd io.Reader) error {
 
 	_, err = s.client.PutObject(context.Background(), &s3.PutObjectInput{
 		Bucket: aws.String(s.bucket),
-		Key:    aws.String(docID),
+		Key:    aws.String(string(docID)),
 		Body:   rd,
 	})
 	if err != nil {
@@ -55,10 +55,10 @@ func (s *S3Storage) Create(docID string, rd io.Reader) error {
 	return nil
 }
 
-func (s *S3Storage) Read(docID string) (io.ReadCloser, error) {
+func (s *S3Storage) Read(docID DocID) (io.ReadCloser, error) {
 	res, err := s.client.GetObject(context.Background(), &s3.GetObjectInput{
 		Bucket: aws.String(s.bucket),
-		Key:    aws.String(docID),
+		Key:    aws.String(string(docID)),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("get object: %w", err)
@@ -66,10 +66,10 @@ func (s *S3Storage) Read(docID string) (io.ReadCloser, error) {
 	return res.Body, nil
 }
 
-func (s *S3Storage) Update(docID string, rd io.Reader) error {
+func (s *S3Storage) Update(docID DocID, rd io.Reader) error {
 	_, err := s.client.HeadObject(context.Background(), &s3.HeadObjectInput{
 		Bucket: aws.String(s.bucket),
-		Key:    aws.String(docID),
+		Key:    aws.String(string(docID)),
 	})
 	if err != nil {
 		return fmt.Errorf("head object: %w", err)
@@ -77,7 +77,7 @@ func (s *S3Storage) Update(docID string, rd io.Reader) error {
 
 	_, err = s.client.PutObject(context.Background(), &s3.PutObjectInput{
 		Bucket: aws.String(s.bucket),
-		Key:    aws.String(docID),
+		Key:    aws.String(string(docID)),
 		Body:   rd,
 	})
 	if err != nil {
@@ -86,10 +86,10 @@ func (s *S3Storage) Update(docID string, rd io.Reader) error {
 	return nil
 }
 
-func (s *S3Storage) Delete(docID string) error {
+func (s *S3Storage) Delete(docID DocID) error {
 	_, err := s.client.DeleteObject(context.Background(), &s3.DeleteObjectInput{
 		Bucket: aws.String(s.bucket),
-		Key:    aws.String(docID),
+		Key:    aws.String(string(docID)),
 	})
 	if err != nil {
 		return fmt.Errorf("delete object: %w", err)

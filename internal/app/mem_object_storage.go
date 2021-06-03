@@ -7,16 +7,16 @@ import (
 )
 
 type MemObjectStorage struct {
-	data map[string][]byte
+	data map[DocID][]byte
 }
 
 func NewMemObjectStorage() *MemObjectStorage {
 	return &MemObjectStorage{
-		data: map[string][]byte{},
+		data: map[DocID][]byte{},
 	}
 }
 
-func (s *MemObjectStorage) Create(id string, rd io.Reader) error {
+func (s *MemObjectStorage) Create(id DocID, rd io.Reader) error {
 	_, ok := s.data[id]
 	if ok {
 		return fmt.Errorf("already exists")
@@ -30,7 +30,7 @@ func (s *MemObjectStorage) Create(id string, rd io.Reader) error {
 	return nil
 }
 
-func (s *MemObjectStorage) Read(id string) (io.ReadCloser, error) {
+func (s *MemObjectStorage) Read(id DocID) (io.ReadCloser, error) {
 	data, ok := s.data[id]
 	if !ok {
 		return nil, fmt.Errorf("does not exist")
@@ -38,7 +38,7 @@ func (s *MemObjectStorage) Read(id string) (io.ReadCloser, error) {
 	return readCloserWrapper{bytes.NewReader(data)}, nil
 }
 
-func (s *MemObjectStorage) Update(id string, rd io.Reader) error {
+func (s *MemObjectStorage) Update(id DocID, rd io.Reader) error {
 	_, ok := s.data[id]
 	if !ok {
 		return fmt.Errorf("does not exist")
@@ -52,7 +52,7 @@ func (s *MemObjectStorage) Update(id string, rd io.Reader) error {
 	return nil
 }
 
-func (s *MemObjectStorage) Delete(id string) error {
+func (s *MemObjectStorage) Delete(id DocID) error {
 	delete(s.data, id)
 	return nil
 }

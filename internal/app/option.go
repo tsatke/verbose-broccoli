@@ -27,9 +27,9 @@ func WithObjectStorage(s ObjectStorage) Option {
 	}
 }
 
-func WithDocumentIndex(i DocumentIndex) Option {
+func WithDocumentRepo(r DocumentRepo) Option {
 	return func(a *App) {
-		a.index = i
+		a.documents = r
 	}
 }
 

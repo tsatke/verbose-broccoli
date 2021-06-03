@@ -4,45 +4,48 @@ import (
 	"database/sql"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/suite"
 )
 
-func TestAuroraIndexTestSuite(t *testing.T) {
-	suite.Run(t, new(AuroraIndexTestSuite))
+func TestPostgresDocumentRepoTestSuite(t *testing.T) {
+	suite.Run(t, new(PostgresDocumentRepoTestSuite))
 }
 
-type AuroraIndexTestSuite struct {
+type PostgresDocumentRepoTestSuite struct {
 	suite.Suite
 
-	index *AuroraIndex
+	index *PostgresDocumentRepo
 	mock  sqlmock.Sqlmock
 	db    *sql.DB
 }
 
-func (suite *AuroraIndexTestSuite) SetupTest() {
+func (suite *PostgresDocumentRepoTestSuite) SetupTest() {
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	suite.NoError(err)
 
 	suite.mock = mock
 	suite.db = db
-	suite.index = &AuroraIndex{suite.db}
+	suite.index = &PostgresDocumentRepo{suite.db}
 }
 
-func (suite *AuroraIndexTestSuite) TearDownTest() {
+func (suite *PostgresDocumentRepoTestSuite) TearDownTest() {
 	suite.NoError(suite.mock.ExpectationsWereMet())
 }
 
-func (suite *AuroraIndexTestSuite) TestCreate() {
+func (suite *PostgresDocumentRepoTestSuite) TestCreate() {
+	docCreateTime := time.Now()
+
 	suite.mock.
 		ExpectBegin()
 	prepHeader := suite.mock.
-		ExpectPrepare(`INSERT INTO au_document_headers (doc_id, name, size) VALUES ($1, $2, $3)`).
+		ExpectPrepare(`INSERT INTO au_document_headers (doc_id, name, size, owner, created) VALUES ($1, $2, $3, $4, $5)`).
 		WillBeClosed()
 	prepHeader.
 		ExpectExec().
-		WithArgs("docID", "docName", 1234).
+		WithArgs("docID", "docName", 1234, "username", docCreateTime).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	prepACL := suite.mock.
 		ExpectPrepare(`INSERT INTO au_document_acls (doc_id, username, read, write, delete, share) VALUES ($1, $2, $3, $4, $5, $6)`).
@@ -55,9 +58,11 @@ func (suite *AuroraIndexTestSuite) TestCreate() {
 		ExpectCommit()
 
 	suite.NoError(suite.index.Create(DocumentHeader{
-		ID:   "docID",
-		Name: "docName",
-		Size: 1234,
+		ID:      "docID",
+		Name:    "docName",
+		Size:    1234,
+		Owner:   "username",
+		Created: docCreateTime,
 	}, ACL{
 		Permissions: map[string]Permission{
 			"username": {
@@ -71,24 +76,28 @@ func (suite *AuroraIndexTestSuite) TestCreate() {
 	}))
 }
 
-func (suite *AuroraIndexTestSuite) TestCreateFailHeader() {
+func (suite *PostgresDocumentRepoTestSuite) TestCreateFailHeader() {
+	docCreateTime := time.Now()
+
 	testErr := errors.New("test error")
 	suite.mock.
 		ExpectBegin()
 	prepHeader := suite.mock.
-		ExpectPrepare(`INSERT INTO au_document_headers (doc_id, name, size) VALUES ($1, $2, $3)`).
+		ExpectPrepare(`INSERT INTO au_document_headers (doc_id, name, size, owner, created) VALUES ($1, $2, $3, $4, $5)`).
 		WillBeClosed()
 	prepHeader.
 		ExpectExec().
-		WithArgs("docID", "docName", 1234).
+		WithArgs("docID", "docName", 1234, "username", docCreateTime).
 		WillReturnError(testErr)
 	suite.mock.
 		ExpectRollback()
 
 	suite.ErrorIs(suite.index.Create(DocumentHeader{
-		ID:   "docID",
-		Name: "docName",
-		Size: 1234,
+		ID:      "docID",
+		Name:    "docName",
+		Size:    1234,
+		Owner:   "username",
+		Created: docCreateTime,
 	}, ACL{
 		Permissions: map[string]Permission{
 			"username": {
@@ -102,16 +111,18 @@ func (suite *AuroraIndexTestSuite) TestCreateFailHeader() {
 	}), testErr)
 }
 
-func (suite *AuroraIndexTestSuite) TestCreateFailACL() {
+func (suite *PostgresDocumentRepoTestSuite) TestCreateFailACL() {
+	docCreateTime := time.Now()
+
 	testErr := errors.New("test error")
 	suite.mock.
 		ExpectBegin()
 	prepHeader := suite.mock.
-		ExpectPrepare(`INSERT INTO au_document_headers (doc_id, name, size) VALUES ($1, $2, $3)`).
+		ExpectPrepare(`INSERT INTO au_document_headers (doc_id, name, size, owner, created) VALUES ($1, $2, $3, $4, $5)`).
 		WillBeClosed()
 	prepHeader.
 		ExpectExec().
-		WithArgs("docID", "docName", 1234).
+		WithArgs("docID", "docName", 1234, "username", docCreateTime).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	prepACL := suite.mock.
 		ExpectPrepare(`INSERT INTO au_document_acls (doc_id, username, read, write, delete, share) VALUES ($1, $2, $3, $4, $5, $6)`).
@@ -124,9 +135,11 @@ func (suite *AuroraIndexTestSuite) TestCreateFailACL() {
 		ExpectRollback()
 
 	suite.ErrorIs(suite.index.Create(DocumentHeader{
-		ID:   "docID",
-		Name: "docName",
-		Size: 1234,
+		ID:      "docID",
+		Name:    "docName",
+		Size:    1234,
+		Owner:   "username",
+		Created: docCreateTime,
 	}, ACL{
 		Permissions: map[string]Permission{
 			"username": {
@@ -140,7 +153,7 @@ func (suite *AuroraIndexTestSuite) TestCreateFailACL() {
 	}), testErr)
 }
 
-func (suite *AuroraIndexTestSuite) TestTx() {
+func (suite *PostgresDocumentRepoTestSuite) TestTx() {
 	suite.mock.
 		ExpectBegin()
 	suite.mock.
@@ -149,25 +162,25 @@ func (suite *AuroraIndexTestSuite) TestTx() {
 	suite.mock.
 		ExpectCommit()
 
-	suite.NoError(suite.index.tx(func(tx *sql.Tx) error {
+	suite.NoError(tx(suite.index.db, func(tx *sql.Tx) error {
 		_, err := tx.Exec("SELECT")
 		return err
 	}))
 }
 
-func (suite *AuroraIndexTestSuite) TestFailBegin() {
+func (suite *PostgresDocumentRepoTestSuite) TestFailBegin() {
 	testErr := errors.New("test error")
 	suite.mock.
 		ExpectBegin().
 		WillReturnError(testErr)
 
-	suite.ErrorIs(suite.index.tx(func(tx *sql.Tx) error {
+	suite.ErrorIs(tx(suite.index.db, func(tx *sql.Tx) error {
 		_, err := tx.Exec("SELECT")
 		return err
 	}), testErr)
 }
 
-func (suite *AuroraIndexTestSuite) TestFailCommit() {
+func (suite *PostgresDocumentRepoTestSuite) TestFailCommit() {
 	testErr := errors.New("test error")
 	suite.mock.
 		ExpectBegin()
@@ -178,7 +191,7 @@ func (suite *AuroraIndexTestSuite) TestFailCommit() {
 		ExpectCommit().
 		WillReturnError(testErr)
 
-	suite.ErrorIs(suite.index.tx(func(tx *sql.Tx) error {
+	suite.ErrorIs(tx(suite.index.db, func(tx *sql.Tx) error {
 		_, err := tx.Exec("SELECT")
 		return err
 	}), testErr)

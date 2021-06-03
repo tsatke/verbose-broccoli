@@ -34,7 +34,7 @@ func (suite *AppSuite) SetupTest() {
 
 	suite.app = New(lis)
 	suite.IsType(&MemObjectStorage{}, suite.app.objects)
-	suite.IsType(&MemDocumentIndex{}, suite.app.index)
+	suite.IsType(&MemDocumentRepo{}, suite.app.documents)
 	suite.IsType(&MemAuthService{}, suite.app.auth)
 
 	go func() {
@@ -45,7 +45,9 @@ func (suite *AppSuite) SetupTest() {
 }
 
 func (suite *AppSuite) TearDownTest() {
-	suite.NoError(suite.app.Close())
+	if suite.app != nil {
+		suite.NoError(suite.app.Close())
+	}
 }
 
 func (suite *AppSuite) Request(method, path string) TestRequest {

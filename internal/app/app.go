@@ -16,7 +16,7 @@ type App struct {
 	listener    net.Listener
 	router      *gin.Engine
 	objects     ObjectStorage
-	index       DocumentIndex
+	documents   DocumentRepo
 	auth        AuthService
 }
 
@@ -73,8 +73,8 @@ func New(lis net.Listener, opts ...Option) *App {
 	if a.objects == nil {
 		a.objects = NewMemObjectStorage()
 	}
-	if a.index == nil {
-		a.index = NewMemDocumentIndex()
+	if a.documents == nil {
+		a.documents = NewMemDocumentRepo()
 	}
 	if a.auth == nil {
 		a.auth = NewMemAuthService()

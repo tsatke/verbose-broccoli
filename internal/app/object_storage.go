@@ -3,8 +3,8 @@ package app
 import "io"
 
 type ObjectStorage interface {
-	Create(string, io.Reader) error
-	Read(string) (io.ReadCloser, error)
-	Update(string, io.Reader) error
-	Delete(string) error
+	Create(DocID, io.Reader) error
+	Read(DocID) (io.ReadCloser, error)
+	Update(DocID, io.Reader) error
+	Delete(DocID) error
 }

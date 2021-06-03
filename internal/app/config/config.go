@@ -17,11 +17,11 @@ const (
 	AWSCognitoPoolID   = "aws.cognito.pool.id"
 	AWSCognitoClientID = "aws.cognito.client.id"
 	AWSS3Bucket        = "aws.s3.bucket"
-	AWSAuroraEndpoint  = "aws.aurora.endpoint"
-	AWSAuroraPort      = "aws.aurora.port"
-	AWSAuroraUsername  = "aws.aurora.username"
-	AWSAuroraPassword  = "aws.aurora.password"
-	AWSAuroraDatabase  = "aws.aurora.database"
+	PGEndpoint         = "aws.postgres.endpoint"
+	PGPort             = "aws.postgres.port"
+	PGUsername         = "aws.postgres.username"
+	PGPassword         = "aws.postgres.password"
+	PGDatabase         = "aws.postgres.database"
 )
 
 type Config struct {
@@ -65,10 +65,10 @@ func load(readFn func(*viper.Viper) error) (Config, error) {
 		AWSCognitoPoolID,
 		AWSCognitoClientID,
 		AWSS3Bucket,
-		AWSAuroraEndpoint,
-		AWSAuroraPort,
-		AWSAuroraUsername,
-		AWSAuroraPassword,
+		PGEndpoint,
+		PGPort,
+		PGUsername,
+		PGPassword,
 	} {
 		if !v.IsSet(required) {
 			return Config{}, notSet(required)

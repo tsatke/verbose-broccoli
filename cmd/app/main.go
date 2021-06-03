@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net"
 	"os"
 
@@ -15,7 +16,7 @@ func main() {
 
 	c, err := appcfg.Load()
 	if err != nil {
-		panic(err)
+		fatal(err)
 	}
 
 	lis, err := net.Listen("tcp", net.JoinHostPort(
@@ -23,26 +24,31 @@ func main() {
 		c.GetString(appcfg.ListenerPort),
 	))
 	if err != nil {
-		panic(err)
+		fatal(err)
 	}
-
-	// i, err := app.NewAuroraIndex(c)
-	// if err != nil {
-	// 	panic(err)
-	// }
 
 	log := zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout}).
 		With().
 		Timestamp().
 		Logger()
 
+	p, err := app.NewPostgresDatabaseProvider(log, c)
+	if err != nil {
+		fatal(err)
+	}
+
 	a := app.New(lis,
 		app.WithLogger(log),
 		app.WithObjectStorage(app.NewS3Storage(c)),
-		// app.WithDocumentIndex(i),
+		app.WithDocumentRepo(app.NewPostgresDocumentRepo(p)),
 		app.WithAuthService(app.NewCognitoService(c)),
 	)
 	if err := a.Run(); err != nil {
-		panic(err)
+		fatal(err)
 	}
+}
+
+func fatal(err error) {
+	_, _ = fmt.Fprintln(os.Stderr, err)
+	os.Exit(1)
 }
