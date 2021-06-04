@@ -62,9 +62,9 @@ jobs:
           go-version: ${{ matrix.go_version }}
 
       - name: Test
-        with:
-          PG_HOST: localhost
-        run: go test -v ./...
+        run: |
+          export PG_HOST=localhost
+          go test -v ./...
 
   coverage:
     needs: test
