@@ -86,7 +86,7 @@ func (suite *AppSuite) TearDownTest() {
 }
 
 func (suite *AppSuite) EqualTime(want, got time.Time) {
-	suite.Truef(want.Truncate(time.Microsecond).Equal(got.Truncate(time.Microsecond)), "expected %v, but got %v", want, got)
+	suite.Truef(want.Truncate(time.Second).Equal(got.Truncate(time.Second)), "expected %v, but got %v", want, got)
 }
 
 func (suite *AppSuite) login() string {
