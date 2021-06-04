@@ -7,6 +7,7 @@ import (
 	"net/http/cookiejar"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -82,6 +83,10 @@ func (suite *AppSuite) TearDownTest() {
 	if suite.app != nil {
 		suite.NoError(suite.app.Close())
 	}
+}
+
+func (suite *AppSuite) EqualTime(want, got time.Time) {
+	suite.Truef(want.Truncate(time.Microsecond).Equal(got), "expected %v, but got %v", want, got)
 }
 
 func (suite *AppSuite) login() string {

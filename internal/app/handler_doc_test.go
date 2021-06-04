@@ -48,8 +48,8 @@ func (suite *AppSuite) TestPostDocument() {
 	suite.Equal(DocID(testUUID.String()), doc.ID)
 	suite.Equal("myfile", doc.Name)
 	suite.Equal(user, doc.Owner)
-	suite.Truef(clock.Timestamp.Truncate(time.Microsecond).Equal(doc.Created), "expected %v, but got %v", clock.Timestamp, doc.Created)
-	suite.Truef(time.Time{}.Truncate(time.Microsecond).Equal(doc.Updated), "expected %v, but got %v", time.Time{}, doc.Updated)
+	suite.EqualTime(clock.Timestamp, doc.Created)
+	suite.EqualTime(time.Time{}, doc.Updated)
 
 	// check that permissions are set up correctly
 	acl, err := suite.app.documents.ACL(DocID(testUUID.String()))
@@ -115,6 +115,7 @@ func (suite *AppSuite) TestPostContent() {
 	suite.Equal(DocID(testUUID.String()), doc.ID)
 	suite.Equal("myfile", doc.Name)
 	suite.Equal(user, doc.Owner)
-	suite.Truef(clock.Timestamp.Truncate(time.Microsecond).Equal(doc.Created), "expected %v, but got %v", clock.Timestamp, doc.Created)
-	suite.Truef(clock.Timestamp.Truncate(time.Microsecond).Equal(doc.Updated), "expected %v, but got %v", clock.Timestamp, doc.Updated)
+	want := clock.Timestamp.Truncate(time.Microsecond)
+	suite.EqualTime(want, doc.Created)
+	suite.EqualTime(want, doc.Updated)
 }
