@@ -32,7 +32,7 @@ func main() {
 		Timestamp().
 		Logger()
 
-	p, err := app.NewPostgresDatabaseProvider(log, c)
+	p, err := app.NewPostgresDatabaseProvider(log, c, true)
 	if err != nil {
 		fatal(err)
 	}

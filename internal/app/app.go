@@ -38,42 +38,7 @@ func New(lis net.Listener, opts ...Option) *App {
 	if a.router == nil {
 		a.router = gin.New()
 		a.router.Use(gin.Recovery())
-		a.router.Use(func(c *gin.Context) {
-			path := c.Request.URL.Path
-			raw := c.Request.URL.RawQuery
-			if raw != "" {
-				path = path + "?" + raw
-			}
-
-			start := time.Now()
-			c.Next()
-			took := time.Since(start)
-
-			var evt *zerolog.Event
-
-			status := c.Writer.Status()
-			switch {
-			case status >= 500:
-				evt = a.log.Error()
-			case len(c.Errors) > 0:
-				evt = a.log.Error()
-			default:
-				evt = a.log.Info()
-			}
-
-			if len(c.Errors) > 0 {
-				evt = evt.Strs("errors", c.Errors.Errors())
-			}
-
-			evt = evt.
-				Str("method", c.Request.Method).
-				Str("path", path).
-				Int("status", c.Writer.Status()).
-				Str("ip", c.ClientIP()).
-				Stringer("took", took)
-
-			evt.Msg("request")
-		})
+		a.router.Use(middlewareLogger(a))
 	}
 	if a.objects == nil {
 		a.objects = NewMemObjectStorage()
@@ -97,6 +62,45 @@ func New(lis net.Listener, opts ...Option) *App {
 	a.setupCORS()
 	a.setupRoutes()
 	return a
+}
+
+func middlewareLogger(a *App) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		path := c.Request.URL.Path
+		raw := c.Request.URL.RawQuery
+		if raw != "" {
+			path = path + "?" + raw
+		}
+
+		start := time.Now()
+		c.Next()
+		took := time.Since(start)
+
+		var evt *zerolog.Event
+
+		status := c.Writer.Status()
+		switch {
+		case status >= 500:
+			evt = a.log.Error()
+		case len(c.Errors) > 0:
+			evt = a.log.Error()
+		default:
+			evt = a.log.Info()
+		}
+
+		if len(c.Errors) > 0 {
+			evt = evt.Strs("errors", c.Errors.Errors())
+		}
+
+		evt = evt.
+			Str("method", c.Request.Method).
+			Str("path", path).
+			Int("status", c.Writer.Status()).
+			Str("ip", c.ClientIP()).
+			Stringer("took", took)
+
+		evt.Msg("request")
+	}
 }
 
 func (a *App) Run() error {

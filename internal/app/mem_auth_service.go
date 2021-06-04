@@ -36,3 +36,7 @@ func (m *MemAuthService) TokenValid(s string) bool {
 	_, ok := m.tokens[s]
 	return ok
 }
+
+func (m *MemAuthService) CreateUser(user, pass string) {
+	m.data[user] = pass
+}

@@ -30,6 +30,42 @@ jobs:
       - name: Test
         run: go test -v ./...
 
+  database_test:
+    strategy:
+      matrix:
+        go_version: [ 1.16 ]
+        os: [ ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go_version }}
+
+      - name: Test
+        with:
+          PG_HOST: localhost
+        run: go test -v ./...
+
   coverage:
     needs: test
     strategy:

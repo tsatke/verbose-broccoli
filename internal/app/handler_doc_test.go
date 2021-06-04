@@ -10,12 +10,12 @@ import (
 
 func (suite *AppSuite) TestPostDocumentNoLogin() {
 	suite.
-		Request("POST", "/doc").
-		Body(M{
+		Post("/doc").
+		BodyJSON(M{
 			"filename": "myfile",
 			"size":     1234,
 		}).
-		Expect(http.StatusUnauthorized, M{
+		ExpectJSON(http.StatusUnauthorized, M{
 			"message": "not logged in",
 			"success": false,
 		})
@@ -32,11 +32,11 @@ func (suite *AppSuite) TestPostDocument() {
 	suite.app.clock = clock
 
 	suite.
-		Request("POST", "/doc").
-		Body(M{
+		Post("/doc").
+		BodyJSON(M{
 			"filename": "myfile",
 		}).
-		Expect(http.StatusOK, M{
+		ExpectJSON(http.StatusOK, M{
 			"success": true,
 			"id":      testUUID.String(),
 		})
@@ -44,13 +44,12 @@ func (suite *AppSuite) TestPostDocument() {
 	// check that document is created correctly
 	doc, err := suite.app.documents.Get(DocID(testUUID.String()))
 	suite.NoError(err)
-	suite.Equal(DocumentHeader{
-		ID:      DocID(testUUID.String()),
-		Name:    "myfile",
-		Owner:   user,
-		Created: clock.Timestamp,
-		Updated: time.Time{},
-	}, doc)
+
+	suite.Equal(DocID(testUUID.String()), doc.ID)
+	suite.Equal("myfile", doc.Name)
+	suite.Equal(user, doc.Owner)
+	suite.True(clock.Timestamp.Equal(doc.Created))
+	suite.True(time.Time{}.Equal(doc.Updated))
 
 	// check that permissions are set up correctly
 	acl, err := suite.app.documents.ACL(DocID(testUUID.String()))
@@ -82,20 +81,20 @@ func (suite *AppSuite) TestPostContent() {
 
 	// create required document header
 	suite.
-		Request("POST", "/doc").
-		Body(M{
+		Post("/doc").
+		BodyJSON(M{
 			"filename": "myfile",
 		}).
-		Expect(http.StatusOK, M{
+		ExpectJSON(http.StatusOK, M{
 			"success": true,
 			"id":      testUUID.String(),
 		})
 
 	// post content
 	suite.
-		Request("POST", "/doc/"+testUUID.String()+"/content").
+		Post("/doc/"+testUUID.String()+"/content").
 		File("file", "ignored", data).
-		Expect(http.StatusOK, M{
+		ExpectJSON(http.StatusOK, M{
 			"success": true,
 		})
 
@@ -112,11 +111,10 @@ func (suite *AppSuite) TestPostContent() {
 	// check that the header information updates the updated field
 	doc, err := suite.app.documents.Get(DocID(testUUID.String()))
 	suite.NoError(err)
-	suite.Equal(DocumentHeader{
-		ID:      DocID(testUUID.String()),
-		Name:    "myfile",
-		Owner:   user,
-		Created: clock.Timestamp,
-		Updated: clock.Timestamp,
-	}, doc)
+
+	suite.Equal(DocID(testUUID.String()), doc.ID)
+	suite.Equal("myfile", doc.Name)
+	suite.Equal(user, doc.Owner)
+	suite.True(clock.Timestamp.Equal(doc.Created))
+	suite.True(clock.Timestamp.Equal(doc.Updated))
 }

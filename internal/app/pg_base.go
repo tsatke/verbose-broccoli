@@ -2,19 +2,24 @@ package app
 
 import (
 	"database/sql"
+	_ "embed"
 	"fmt"
 	"time"
 
+	_ "github.com/lib/pq"
 	"github.com/rs/zerolog"
 	"github.com/tsatke/verbose-broccoli/internal/app/config"
 )
+
+//go:embed init.sql
+var InitSQL string
 
 type PostgresDatabaseProvider struct {
 	Config config.Config
 	DB     *sql.DB
 }
 
-func NewPostgresDatabaseProvider(log zerolog.Logger, cfg config.Config) (*PostgresDatabaseProvider, error) {
+func NewPostgresDatabaseProvider(log zerolog.Logger, cfg config.Config, ssl bool) (*PostgresDatabaseProvider, error) {
 	endpoint := cfg.GetString(config.PGEndpoint)
 	port := cfg.GetString(config.PGPort)
 	user := cfg.GetString(config.PGUsername)
@@ -22,6 +27,9 @@ func NewPostgresDatabaseProvider(log zerolog.Logger, cfg config.Config) (*Postgr
 	database := cfg.GetString(config.PGDatabase)
 
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s", endpoint, port, user, pass, database)
+	if !ssl {
+		dsn += " sslmode=disable"
+	}
 
 	log.
 		Info().
@@ -58,7 +66,7 @@ func (i *PostgresDatabaseProvider) tx(fn func(tx *sql.Tx) error) error {
 
 func (i *PostgresDatabaseProvider) initDB() error {
 	return i.tx(func(tx *sql.Tx) error {
-		_, err := tx.Exec(init_sql)
+		_, err := tx.Exec(InitSQL)
 		if err != nil {
 			return fmt.Errorf("exec init: %w", err)
 		}

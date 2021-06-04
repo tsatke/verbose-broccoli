@@ -2,14 +2,10 @@ package app
 
 import (
 	"database/sql"
-	_ "embed"
+	"database/sql/driver"
 	"fmt"
-
-	_ "github.com/lib/pq"
+	"time"
 )
-
-//go:embed init.sql
-var init_sql string
 
 var _ DocumentRepo = (*PostgresDocumentRepo)(nil)
 
@@ -59,7 +55,7 @@ func (i *PostgresDocumentRepo) Create(header DocumentHeader, acl ACL) error {
 
 func (i *PostgresDocumentRepo) Update(header DocumentHeader, acl ACL) error {
 	return tx(i.db, func(tx *sql.Tx) error {
-		docHeaderUpdate, err := tx.Prepare(`UPDATE au_document_headers SET (name, owner, created) = ($1, $2, $3) WHERE doc_id = $4`)
+		docHeaderUpdate, err := tx.Prepare(`UPDATE au_document_headers SET (name, owner, created, updated) = ($1, $2, $3, $4) WHERE doc_id = $5`)
 		if err != nil {
 			return fmt.Errorf("prepare header insert: %w", err)
 		}
@@ -67,7 +63,7 @@ func (i *PostgresDocumentRepo) Update(header DocumentHeader, acl ACL) error {
 			_ = docHeaderUpdate.Close()
 		}()
 
-		_, err = docHeaderUpdate.Exec(header.Name, header.Owner, header.Created, header.ID)
+		_, err = docHeaderUpdate.Exec(header.Name, header.Owner, header.Created, header.Updated, header.ID)
 		if err != nil {
 			return fmt.Errorf("update header: %w", err)
 		}
@@ -92,11 +88,15 @@ func (i *PostgresDocumentRepo) Update(header DocumentHeader, acl ACL) error {
 }
 
 func (i *PostgresDocumentRepo) Get(id DocID) (DocumentHeader, error) {
-	row := i.db.QueryRow(`SELECT doc_id, name FROM au_document_headers WHERE doc_id = $1`, id)
+	row := i.db.QueryRow(`SELECT doc_id, name, owner, created, updated FROM au_document_headers WHERE doc_id = $1`, id)
 
 	var h DocumentHeader
-	if err := row.Scan(&h.ID, &h.Name); err != nil {
+	var nt nullableTime
+	if err := row.Scan(&h.ID, &h.Name, &h.Owner, &h.Created, &nt); err != nil {
 		return DocumentHeader{}, fmt.Errorf("scan: %w", err)
+	}
+	if nt.Valid {
+		h.Updated = nt.Time
 	}
 	return h, nil
 }
@@ -122,4 +122,23 @@ func (i *PostgresDocumentRepo) ACL(id DocID) (ACL, error) {
 		acl.Permissions[p.Username] = p
 	}
 	return acl, nil
+}
+
+type nullableTime struct {
+	Time  time.Time
+	Valid bool // Valid is true if Time is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (nt *nullableTime) Scan(value interface{}) error {
+	nt.Time, nt.Valid = value.(time.Time)
+	return nil
+}
+
+// Value implements the driver Valuer interface.
+func (nt nullableTime) Value() (driver.Value, error) {
+	if !nt.Valid {
+		return nil, nil
+	}
+	return nt.Time, nil
 }
