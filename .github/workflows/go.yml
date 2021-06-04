@@ -36,7 +36,7 @@ jobs:
         go_version: [ 1.16 ]
         os: [ ubuntu-latest ]
     runs-on: ${{ matrix.os }}
-    container: ubuntu:latest
+    container: golang:${{ matrix.go_version }}
     services:
       postgres:
         image: postgres
