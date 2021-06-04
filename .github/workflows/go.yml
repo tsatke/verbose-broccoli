@@ -39,7 +39,7 @@ jobs:
     container: golang:${{ matrix.go_version }}
     services:
       postgres:
-        image: postgres
+        image: postgres:12.4
         env:
           POSTGRES_PASSWORD: postgres
         options: >-
