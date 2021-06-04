@@ -63,7 +63,7 @@ jobs:
 
       - name: Test
         run: |
-          export PG_HOST=localhost
+          export PG_HOST=postgres
           go test -v ./...
 
   coverage:
