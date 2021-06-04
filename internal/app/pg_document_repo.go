@@ -57,6 +57,40 @@ func (i *PostgresDocumentRepo) Create(header DocumentHeader, acl ACL) error {
 	})
 }
 
+func (i *PostgresDocumentRepo) Update(header DocumentHeader, acl ACL) error {
+	return tx(i.db, func(tx *sql.Tx) error {
+		docHeaderUpdate, err := tx.Prepare(`UPDATE au_document_headers SET (name, owner, created) = ($1, $2, $3) WHERE doc_id = $4`)
+		if err != nil {
+			return fmt.Errorf("prepare header insert: %w", err)
+		}
+		defer func() {
+			_ = docHeaderUpdate.Close()
+		}()
+
+		_, err = docHeaderUpdate.Exec(header.Name, header.Owner, header.Created, header.ID)
+		if err != nil {
+			return fmt.Errorf("update header: %w", err)
+		}
+
+		docACLInsert, err := tx.Prepare(`UPDATE au_document_acls SET (username, read, write, delete, share) = ($1, $2, $3, $4, $5) WHERE doc_id = $6`)
+		if err != nil {
+			return fmt.Errorf("prepare acl insert: %w", err)
+		}
+		defer func() {
+			_ = docACLInsert.Close()
+		}()
+
+		for _, perm := range acl.Permissions {
+			_, err = docACLInsert.Exec(perm.Username, perm.Read, perm.Write, perm.Delete, perm.Share, header.ID)
+			if err != nil {
+				return fmt.Errorf("update ACL: %w", err)
+			}
+		}
+
+		return nil
+	})
+}
+
 func (i *PostgresDocumentRepo) Get(id DocID) (DocumentHeader, error) {
 	row := i.db.QueryRow(`SELECT doc_id, name FROM au_document_headers WHERE doc_id = $1`, id)
 

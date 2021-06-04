@@ -28,7 +28,10 @@ func (m *MemDocumentRepo) Create(h DocumentHeader, acl ACL) error {
 	if _, ok := m.data[h.ID]; ok {
 		return fmt.Errorf("already exists")
 	}
+	return m.Update(h, acl)
+}
 
+func (m *MemDocumentRepo) Update(h DocumentHeader, acl ACL) error {
 	m.data[h.ID] = h
 	m.acls[h.ID] = acl
 

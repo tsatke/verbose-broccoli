@@ -28,6 +28,7 @@ type (
 
 type DocumentRepo interface {
 	Create(DocumentHeader, ACL) error
+	Update(DocumentHeader, ACL) error
 	Get(DocID) (DocumentHeader, error)
 	Delete(DocID) error
 	ACL(DocID) (ACL, error)

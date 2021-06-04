@@ -108,4 +108,15 @@ func (suite *AppSuite) TestPostContent() {
 	suite.NoError(rdc.Close())
 
 	suite.Equal(data, content)
+
+	// check that the header information updates the updated field
+	doc, err := suite.app.documents.Get(DocID(testUUID.String()))
+	suite.NoError(err)
+	suite.Equal(DocumentHeader{
+		ID:      DocID(testUUID.String()),
+		Name:    "myfile",
+		Owner:   user,
+		Created: clock.Timestamp,
+		Updated: clock.Timestamp,
+	}, doc)
 }

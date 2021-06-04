@@ -37,6 +37,15 @@ func (a *App) HandlerPostContent() gin.HandlerFunc {
 		sess := sessions.Default(c)
 		userID := sess.Get(UserIDKey).(string)
 
+		docHeader, err := a.documents.Get(id)
+		if err != nil {
+			_ = c.Error(err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, Response{
+				Message: "get header for document",
+			})
+			return
+		}
+
 		acl, err := a.documents.ACL(id)
 		if err != nil {
 			_ = c.Error(err)
@@ -78,6 +87,15 @@ func (a *App) HandlerPostContent() gin.HandlerFunc {
 			_ = c.Error(err)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, Response{
 				Message: "failed to create object",
+			})
+			return
+		}
+
+		docHeader.Updated = a.clock.Now()
+		if err := a.documents.Update(docHeader, acl); err != nil {
+			_ = c.Error(err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, Response{
+				Message: "failed to update document header",
 			})
 			return
 		}
