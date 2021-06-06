@@ -98,3 +98,37 @@ jobs:
           curl https://deepsource.io/cli | sh
           export DEEPSOURCE_DSN=https://937c6f20f5e744c88630fceb4a485bc4@deepsource.io
           ./bin/deepsource report --analyzer test-coverage --key go --value-file ./cover.out
+
+  build:
+    needs:
+      - test
+      - database_test
+    strategy:
+      matrix:
+        go_version: [ 1.16 ]
+        os: [ ubuntu-latest, windows-latest, macOS-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go_version }}
+
+      - name: Build
+        run: |
+          go build -o verbose-broccoli-${{ matrix.os }} ./cmd/app
+      
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: dist
+          path: ./verbose-broccoli-${{ matrix.os }}
