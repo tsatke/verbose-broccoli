@@ -34,7 +34,7 @@ jobs:
     strategy:
       matrix:
         go_version: [ 1.16 ]
-        os: [ ubuntu-latest, windows-latest, macOS-latest ]
+        os: [ ubuntu-latest, macOS-latest ]
     runs-on: ${{ matrix.os }}
     container: golang:${{ matrix.go_version }}
     services:
@@ -126,7 +126,7 @@ jobs:
       - name: Build
         run: |
           go build -o verbose-broccoli-${{ matrix.os }} ./cmd/app
-      
+
       - name: Archive artifacts
         uses: actions/upload-artifact@v2
         with:
