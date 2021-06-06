@@ -34,7 +34,7 @@ jobs:
     strategy:
       matrix:
         go_version: [ 1.16 ]
-        os: [ ubuntu-latest ]
+        os: [ ubuntu-latest, windows-latest, macOS-latest ]
     runs-on: ${{ matrix.os }}
     container: golang:${{ matrix.go_version }}
     services:
